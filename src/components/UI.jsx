@@ -463,6 +463,7 @@ export function QuoteWizard({ service, plan, onClose }) {
   const { data, submitInquiry, notify } = useSite();
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
+  const [submitting, setSubmitting] = useState(false);
   const dialogRef = useRef(null);
   const previousFocus = useRef(null);
   const [errors, setErrors] = useState({});
@@ -476,12 +477,10 @@ export function QuoteWizard({ service, plan, onClose }) {
   const chosen = service || data.services.find((s) => s.id === answers.service);
   const questions = chosen?.questions || [];
   const set = (key, value) => setAnswers((v) => ({ ...v, [key]: value }));
+  const isAnswered = (value) => Array.isArray(value) ? value.length > 0 : typeof value === "string" ? Boolean(value.trim()) : value !== undefined && value !== null;
   const questionsComplete = questions
     .filter((q) => q.required)
-    .every((q) => {
-      const value = answers[q.id];
-      return Array.isArray(value) ? value.length > 0 : Boolean(value);
-    });
+    .every((q) => isAnswered(answers[q.id]));
   useEffect(() => {
     previousFocus.current = document.activeElement;
     const dialog = dialogRef.current;
@@ -517,6 +516,7 @@ export function QuoteWizard({ service, plan, onClose }) {
     };
   }, [onClose]);
   const submit = async () => {
+    if (submitting) return;
     const validation = validateContact(answers);
     setErrors(validation);
     if (Object.keys(validation).length) {
@@ -548,21 +548,21 @@ export function QuoteWizard({ service, plan, onClose }) {
       internalNotes: "",
       createdAt: new Date().toISOString(),
     };
-    await submitInquiry(inquiry);
-    const summary = buildInquirySummary({
-      service: chosen,
-      plan,
-      answers,
-      questions,
-    });
-    window.open(
-      `https://wa.me/${data.settings.whatsappRaw}?text=${encodeURIComponent(summary)}`,
-      "_blank",
-      "noopener,noreferrer",
-    );
-    notify("Solicitud guardada y preparada para WhatsApp");
-    onClose?.();
-    navigate("/gracias");
+    setSubmitting(true);
+    try {
+      const persisted = await submitInquiry(inquiry);
+      const summary = buildInquirySummary({ service: chosen, plan, answers, questions });
+      window.open(
+        `https://wa.me/${data.settings.whatsappRaw}?text=${encodeURIComponent(summary)}`,
+        "_blank",
+        "noopener,noreferrer",
+      );
+      notify(persisted ? "Solicitud guardada y preparada para WhatsApp" : "Solicitud guardada localmente y preparada para WhatsApp", persisted ? "success" : "warning");
+      onClose?.();
+      navigate("/gracias");
+    } finally {
+      setSubmitting(false);
+    }
   };
   return (
     <div
@@ -736,11 +736,11 @@ export function QuoteWizard({ service, plan, onClose }) {
                 Atrás
               </button>
               <button
-                disabled={!answers.name || !answers.email}
+                disabled={submitting || !answers.name.trim() || !answers.email.trim()}
                 className="button primary"
                 onClick={submit}
               >
-                Enviar solicitud <MessageCircle size={17} />
+                {submitting ? "Enviando…" : "Enviar solicitud"} <MessageCircle size={17} />
               </button>
             </div>
           </div>

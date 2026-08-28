@@ -14,6 +14,13 @@ const remoteCall = async (method, ...args) => {
 
 const collectionKeys = ["pages", "categories", "projects", "services", "plans", "testimonials", "faqs", "inquiries", "media", "trash", "versions"];
 const editorialCollections = ["pages", "projects", "services", "plans", "testimonials", "faqs"];
+const localizeInquiry = (inquiry) => ({
+  ...inquiry,
+  files: (inquiry.files || []).map((file) => {
+    const isFile = typeof File !== "undefined" && file instanceof File;
+    return isFile ? { name: file.name, type: file.type, size: file.size, lastModified: file.lastModified } : file;
+  }),
+});
 
 function normalizeData(input = {}) {
   const normalized = { ...seedData, ...input, settings: { ...seedData.settings, ...(input.settings || {}) } };
@@ -207,7 +214,7 @@ export function SiteProvider({ children }) {
       Promise.all(ordered.map((item) => remoteCall("upsertRemoteItem", collection, item))).catch(reportRemoteError);
     },
     async submitInquiry(inquiry) {
-      setData((prev) => ({ ...prev, inquiries: [inquiry, ...prev.inquiries] }));
+      setData((prev) => ({ ...prev, inquiries: [localizeInquiry(inquiry), ...prev.inquiries] }));
       try {
         const remote = await remoteCall("submitRemoteInquiry", inquiry);
         if (remote) setData((prev) => ({ ...prev, inquiries: prev.inquiries.map((item) => item.id === inquiry.id ? remote : item) }));

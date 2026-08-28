@@ -28,6 +28,22 @@ test("el panel optimiza y guarda una imagen subida", async ({ page }) => {
   await expect(image).toBeVisible();
   await expect(image).toHaveAttribute("src", /^data:image\/webp/);
 });
+test("los cambios publicados en servicios aparecen en el cotizador público", async ({ page }) => {
+  await page.goto("/admin/acceso");
+  await page.getByLabel("Código de acceso").fill("demo2026");
+  await page.getByRole("button", { name: /Entrar al panel/i }).click();
+  await page.goto("/admin/servicios");
+  await page.locator(".service-admin-list article").first().locator("button").nth(2).click();
+  const name = page.getByLabel("Nombre");
+  const changed = `${await name.inputValue()} actualizado`;
+  await name.fill(changed);
+  await page.getByRole("button", { name: "Guardar versión" }).click();
+  await page.goto("/servicios");
+  await expect(page.getByText(changed, { exact: true })).toBeVisible();
+  await page.getByText(changed, { exact: true }).click();
+  await page.getByRole("button", { name: "Cotizar este servicio" }).click();
+  await expect(page.getByRole("dialog")).toContainText(changed);
+});
 test("portfolio filtra con URL de categoría", async ({ page }) => {
   await page.goto("/portfolio");
   await page.getByRole("button", { name: "Branding", exact: true }).click();
