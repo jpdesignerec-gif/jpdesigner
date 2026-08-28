@@ -1,43 +1,44 @@
 # Estado del proyecto
 
-Última actualización: 21 de agosto de 2026.
+Última actualización: 28 de agosto de 2026.
 
 ## Implementado
 
 - Inicio corto y comercial, portfolio con categorías, tags y páginas de proyecto.
 - Servicios con 14 servicios, preguntas configurables por servicio, requisitos, entregables, precios y tiempos.
-- Cotizador de tres pasos con respuestas etiquetadas, plan seleccionado, validación, WhatsApp y registro local de consultas.
+- Cotizador de tres pasos con respuestas etiquetadas, plan seleccionado, validación, WhatsApp y registro seguro de consultas y adjuntos en Supabase, con respaldo local cuando no hay conexión.
 - Planes con comparación de características.
 - Contacto, términos, cookies, privacidad, 404 comercial y navegación móvil.
 - Tema oscuro/claro, buscador `Ctrl/Cmd + K`, menú contextual, notificaciones, diálogos, galerías, calendario, selector de color, carga de archivos y animaciones con reducción de movimiento.
 - Constructor de bloques con texto, columnas, imágenes, banners, pantalla completa, galerías, vídeo, HTML, mapa, media-text, divisor, botones, redes, iconos, SVG, logos, emojis y fecha. Los bloques se pueden añadir, editar, duplicar, ocultar, arrastrar, subir, bajar y eliminar con confirmación.
 - Admin con borradores, publicados, programados, vista previa privada, autoguardado, aviso de cambios, historial, restauración, duplicación, papelera, búsqueda, filtros, paginación, notas internas y CSV/PDF.
 - SEO editable por contenido, canonical configurable, Open Graph, robots, sitemap generado en build, favicon y rutas de categorías.
-- Medios con optimización WebP local, dimensiones, texto alternativo y verificación de derechos.
+- Medios con optimización WebP local, almacenamiento público administrado en Supabase, texto alternativo y verificación de derechos.
+- Supabase Auth en producción, perfiles administrativos, persistencia editorial, RLS, Storage, consultas por RPC, versiones, papelera y ajustes compartidos.
+- GitHub Pages preparado para publicar la web pública y el panel admin bajo el subdirectorio del repositorio, incluyendo rutas directas mediante `404.html`.
 - Pruebas: 8 unitarias y 11 E2E aprobadas en Chrome escritorio y emulación móvil; una prueba de overflow se omite intencionalmente en el proyecto de escritorio.
 
-## Estado de persistencia
+## Estado de persistencia y despliegue
 
-La aplicación actual usa `localStorage` bajo `jep-site-data-v2` para que pueda probarse sin credenciales. `SiteStore` mantiene una interfaz estable para migrar a Supabase.
+La aplicación usa Supabase cuando las variables públicas están configuradas. `localStorage` bajo `jep-site-data-v2` se mantiene como respaldo de experiencia y para desarrollo sin credenciales.
 
-El archivo `supabase/schema.sql` ya contiene tablas, estados editoriales, versiones, papelera, medios, perfiles admin y políticas RLS. Aún no se ha ejecutado contra un proyecto real.
+Las migraciones `0001`–`0005` contienen esquema, políticas RLS, Storage público/privado, contenido inicial y la ayuda de alta administrativa. El código está listo; su ejecución remota requiere autenticar la CLI o usar SQL Editor con la cuenta propietaria.
 
 ## Pendiente antes de producción
 
-1. Crear proyecto Supabase y ejecutar el esquema.
-2. Crear usuario Auth y registrarlo en `admin_profiles` con su UUID.
-3. Sustituir login demo por Supabase Auth y mover escritura de consultas/archivos a funciones seguras.
-4. Configurar Storage privado, transformación de imágenes, límites de tamaño y limpieza de archivos no usados.
-5. Configurar correo transaccional para `jepdesigner.ec@gmail.com` y antispam/rate limiting.
-6. Cargar textos, precios, tiempos, revisiones, inclusiones, exclusiones, proyectos, testimonios y derechos reales.
-7. Definir dominio final y `SITE_URL`; regenerar sitemap en CI/Vercel.
-8. Ejecutar Lighthouse, WCAG 2.2, teclado/lector de pantalla y pruebas en Safari/iPhone, Firefox y Android físico.
-9. Configurar GitHub, Vercel, variables de entorno y backups.
+1. Autenticar Supabase, vincular el proyecto y ejecutar `npx supabase db push`.
+2. Crear el usuario Auth y promoverlo con `public.promote_admin`.
+3. Configurar las dos variables Supabase en GitHub Actions y activar Pages con origen GitHub Actions.
+4. Autenticar GitHub y subir `main`; la publicación se ejecuta automáticamente.
+5. Configurar correo transaccional y protección antispam/rate limiting antes de una campaña de alto tráfico.
+6. Sustituir o verificar testimonios, proyectos, precios, derechos y contenido demo antes de presentarlos como reales.
+7. Definir dominio final y actualizar `SITE_URL` cuando deje de usarse el dominio de GitHub Pages.
+8. Ejecutar Lighthouse, WCAG 2.2, teclado/lector de pantalla y pruebas en dispositivos físicos.
+9. Configurar backups periódicos de Supabase.
 
 ## Riesgos conocidos
 
 - El login `demo2026` solo es para desarrollo y no debe habilitarse en producción.
-- WhatsApp funciona como enlace `wa.me`; el correo real requiere una función servidor.
+- WhatsApp funciona como enlace `wa.me`; el aviso por correo de nuevas consultas requiere una función servidor.
 - Los datos locales pueden contener consultas de prueba: exportar y limpiar antes de compartir.
 - El contenido demo no debe presentarse como testimonio o proyecto auténtico sin verificación.
-

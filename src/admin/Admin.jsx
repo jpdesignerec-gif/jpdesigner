@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { NavLink, Navigate, Outlet, useNavigate } from "react-router-dom";
+import { Link, NavLink, Navigate, Outlet, useNavigate } from "react-router-dom";
 import {
   ArrowDown,
   ArrowLeft,
@@ -35,6 +35,8 @@ import { Logo } from "../components/UI";
 import { BlockBuilder } from "../components/BlockBuilder";
 import { useSite } from "../store/SiteStore";
 import { ConfirmDialog } from "../components/Feedback";
+import { getAdminSession, isSupabaseConfigured, supabase } from "../lib/supabase";
+import { assetUrl } from "../utils/assets";
 import {
   AdminListToolbar,
   AdminSearch,
@@ -75,6 +77,7 @@ const validAdminSession = () => {
 };
 
 export function AdminGuard() {
+  const [access, setAccess] = useState(() => validAdminSession() ? "allowed" : "checking");
   useEffect(() => {
     let robots = document.querySelector('meta[name="robots"]');
     if (!robots) {
@@ -83,21 +86,27 @@ export function AdminGuard() {
       document.head.appendChild(robots);
     }
     robots.content = "noindex, nofollow, noarchive";
+    let active = true;
+    if (!validAdminSession()) {
+      getAdminSession()
+        .then(({ isAdmin }) => active && setAccess(isAdmin ? "allowed" : "denied"))
+        .catch(() => active && setAccess("denied"));
+    }
     return () => {
+      active = false;
       robots.content = "index, follow";
     };
   }, []);
-  return validAdminSession() ? (
-    <Outlet />
-  ) : (
-    <Navigate to="/admin/acceso" replace />
-  );
+  if (access === "checking") return <main className="admin-login"><div className="login-card"><Logo /><p>Verificando acceso seguro…</p></div></main>;
+  return access === "allowed" ? <Outlet /> : <Navigate to="/admin/acceso" replace />;
 }
 
 export function AdminLogin() {
   const nav = useNavigate();
   const [code, setCode] = useState("");
+  const [credentials, setCredentials] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   useEffect(() => {
     let robots = document.querySelector('meta[name="robots"]');
     if (!robots) {
@@ -107,18 +116,40 @@ export function AdminLogin() {
     }
     robots.content = "noindex, nofollow, noarchive";
   }, []);
-  const submit = (e) => {
+  const submit = async (e) => {
     e.preventDefault();
-    if (code === adminPreviewCode && adminPreviewEnabled) {
-      sessionStorage.setItem(
-        ADMIN_SESSION_KEY,
-        JSON.stringify({ expiresAt: Date.now() + 8 * 60 * 60 * 1000 }),
-      );
-      nav("/admin");
-    } else
-      setError(
-        "No fue posible iniciar sesión. Verifica el acceso configurado.",
-      );
+    setError("");
+    if (adminPreviewEnabled) {
+      if (code === adminPreviewCode) {
+        sessionStorage.setItem(
+          ADMIN_SESSION_KEY,
+          JSON.stringify({ expiresAt: Date.now() + 8 * 60 * 60 * 1000 }),
+        );
+        nav("/admin");
+      } else {
+        setError("No fue posible iniciar sesión. Verifica el código de acceso.");
+      }
+      return;
+    }
+    if (!isSupabaseConfigured) {
+      setError("Supabase todavía no está configurado en este despliegue.");
+      return;
+    }
+    setLoading(true);
+    const { error: authError } = await supabase.auth.signInWithPassword(credentials);
+    if (authError) {
+      setLoading(false);
+      setError("Correo o contraseña incorrectos.");
+      return;
+    }
+    const { isAdmin } = await getAdminSession();
+    if (!isAdmin) {
+      await supabase.auth.signOut();
+      setLoading(false);
+      setError("Este usuario no tiene permisos de administración.");
+      return;
+    }
+    nav("/admin");
   };
   return (
     <main className="admin-login">
@@ -129,7 +160,7 @@ export function AdminLogin() {
         <p>
           {adminPreviewEnabled
             ? "Acceso temporal de desarrollo. La sesión se cierra automáticamente después de 8 horas."
-            : "El panel permanecerá cerrado hasta conectar Supabase Auth."}
+            : "Inicia sesión con tu usuario autorizado de Supabase."}
         </p>
         {adminPreviewEnabled ? (
           <form onSubmit={submit}>
@@ -147,6 +178,34 @@ export function AdminLogin() {
             {error && <p className="form-error">{error}</p>}
             <button className="button primary wide">
               Entrar al panel <ChevronRight />
+            </button>
+          </form>
+        ) : isSupabaseConfigured ? (
+          <form onSubmit={submit}>
+            <label className="field">
+              <span>Correo</span>
+              <input
+                autoFocus
+                required
+                type="email"
+                autoComplete="username"
+                value={credentials.email}
+                onChange={(e) => setCredentials({ ...credentials, email: e.target.value })}
+              />
+            </label>
+            <label className="field">
+              <span>Contraseña</span>
+              <input
+                required
+                type="password"
+                autoComplete="current-password"
+                value={credentials.password}
+                onChange={(e) => setCredentials({ ...credentials, password: e.target.value })}
+              />
+            </label>
+            {error && <p className="form-error" role="alert">{error}</p>}
+            <button className="button primary wide" disabled={loading}>
+              {loading ? "Verificando…" : "Entrar al panel"} <ChevronRight />
             </button>
           </form>
         ) : (
@@ -168,9 +227,9 @@ export function AdminLogin() {
 
 function LinkBack() {
   return (
-    <a className="login-back" href="/">
+    <Link className="login-back" to="/">
       <ArrowLeft size={15} /> Volver al sitio
-    </a>
+    </Link>
   );
 }
 
@@ -201,12 +260,13 @@ export function AdminLayout() {
           ))}
         </nav>
         <div className="sidebar-bottom">
-          <a href="/" target="_blank">
+          <Link to="/" target="_blank">
             <Eye size={18} /> Ver sitio
-          </a>
+          </Link>
           <button
-            onClick={() => {
+            onClick={async () => {
               sessionStorage.removeItem(ADMIN_SESSION_KEY);
+              if (supabase) await supabase.auth.signOut();
               nav("/admin/acceso");
             }}
           >
@@ -242,9 +302,9 @@ export function Dashboard() {
       title="Resumen"
       subtitle="Vista general del contenido y las solicitudes recientes."
       action={
-        <a className="button primary small" href="/" target="_blank">
+        <Link className="button primary small" to="/" target="_blank">
           Ver sitio <Eye size={16} />
-        </a>
+        </Link>
       }
     >
       <div className="metric-grid">
@@ -547,7 +607,7 @@ export function ProjectsAdmin() {
       summary: "",
       body: "",
       blocks: [],
-      cover: "/assets/portada.jpg",
+      cover: assetUrl("/assets/portada.jpg"),
       gallery: [],
       tags: [],
       featured: false,
@@ -1763,7 +1823,7 @@ function PlanEditor({ item, onClose, onSave, onAutosave }) {
 }
 
 export function InquiriesAdmin() {
-  const { data, updateItem, trashItem, notify } = useSite();
+  const { data, updateItem, trashItem, openInquiryFile, notify } = useSite();
   const [selected, setSelected] = useState(null);
   const [deleting, setDeleting] = useState(null);
   const list = useAdminList(data.inquiries, {
@@ -1869,6 +1929,22 @@ export function InquiriesAdmin() {
             <h3>{selected.serviceName}</h3>
             <span>Respuestas</span>
             <pre>{JSON.stringify(selected.answers, null, 2)}</pre>
+            {selected.files?.length > 0 && (
+              <>
+                <span>Archivos adjuntos</span>
+                <div className="file-list">
+                  {selected.files.map((file) => (
+                    <button
+                      className="button ghost small"
+                      key={file.path || file.name}
+                      onClick={() => openInquiryFile(file)}
+                    >
+                      <Download size={15} /> {file.name || "Abrir archivo"}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
             <label className="field">
               <span>Notas internas — nunca visibles para el cliente</span>
               <textarea
@@ -1899,37 +1975,35 @@ export function InquiriesAdmin() {
 }
 
 export function MediaAdmin() {
-  const { data, setData, updateItem, notify } = useSite();
+  const { data, addItem, removeItem, updateItem, uploadMedia, notify } = useSite();
   const input = useRef();
   const [deleting, setDeleting] = useState(null);
   const upload = async (files) => {
     for (const file of files) {
       if (!file.type.startsWith("image/")) continue;
+      if (isSupabaseConfigured) {
+        await uploadMedia(file, { name: file.name, rightsVerified: false });
+        continue;
+      }
       const optimized = await optimizeImage(file);
-      setData((prev) => ({
-        ...prev,
-        media: [
-          {
-            id: crypto.randomUUID(),
-            name: file.name.replace(/\.[^.]+$/, ".webp"),
-            url: optimized.url,
-            variants: optimized.variants,
-            width: optimized.width,
-            height: optimized.height,
-            alt: "",
-            rightsVerified: false,
-            type: "image",
-          },
-          ...prev.media,
-        ],
-      }));
+      addItem("media", {
+        id: crypto.randomUUID(),
+        name: file.name.replace(/\.[^.]+$/, ".webp"),
+        url: optimized.url,
+        variants: optimized.variants,
+        width: optimized.width,
+        height: optimized.height,
+        alt: "",
+        rightsVerified: false,
+        type: "image",
+      });
     }
     notify("Imágenes optimizadas a WebP y añadidas a la biblioteca");
   };
   return (
     <AdminPage
       title="Biblioteca de medios"
-      subtitle="Imágenes optimizadas automáticamente para reducir peso."
+      subtitle="Archivos centralizados con texto alternativo y control de derechos."
       action={
         <>
           <input
@@ -2013,10 +2087,7 @@ export function MediaAdmin() {
         message={`“${deleting?.name || ""}” se eliminará de la biblioteca. Comprueba antes que ninguna página lo esté usando.`}
         onClose={() => setDeleting(null)}
         onConfirm={() => {
-          setData((prev) => ({
-            ...prev,
-            media: prev.media.filter((item) => item.id !== deleting.id),
-          }));
+          removeItem("media", deleting.id);
           notify("Archivo eliminado");
         }}
       />
@@ -2025,12 +2096,12 @@ export function MediaAdmin() {
 }
 
 export function SettingsAdmin() {
-  const { data, setData, exportData, importData, resetData, notify } =
+  const { data, saveSettings, remoteStatus, exportData, importData, resetData, notify } =
     useSite();
   const [form, setForm] = useState(data.settings);
   const input = useRef();
   const save = () => {
-    setData((prev) => ({ ...prev, settings: form }));
+    saveSettings(form);
     notify("Ajustes guardados");
   };
   return (
@@ -2127,9 +2198,11 @@ export function SettingsAdmin() {
             Restaurar contenido
           </button>
           <div className="integration-note">
-            <b>Próxima integración</b>
+            <b>{remoteStatus.connected ? "Supabase conectado" : "Modo local de respaldo"}</b>
             <p>
-              Supabase Auth, base de datos, Storage, correo transaccional y RLS.
+              {remoteStatus.connected
+                ? "El contenido, las consultas y los permisos se sincronizan con la base de datos segura."
+                : "Configura las variables de Supabase para sincronizar contenido, consultas, medios y usuarios."}
             </p>
           </div>
         </section>

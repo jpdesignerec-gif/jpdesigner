@@ -16,32 +16,47 @@ SITE_URL=https://dominio-final.example
 
 La `anon key` de Supabase puede ser pública si RLS está correctamente configurado. La `service_role key` nunca debe comenzar por `VITE_`, nunca debe entrar al navegador y nunca debe guardarse en este proyecto.
 
-## Datos que debe entregar el propietario
+## Datos que debe configurar el propietario
 
 - URL del proyecto Supabase.
 - Anon key pública de Supabase.
-- UUID del usuario administrador creado en Supabase Auth.
+- Correo del usuario administrador creado en Supabase Auth.
 - Proveedor de correo transaccional y sus variables server-side.
 - Proyecto/repositorio GitHub y rama de producción.
 - Proyecto Vercel y dominio definitivo.
 - Credenciales del proveedor DNS únicamente por el canal seguro del proveedor; no en el repositorio.
 
-## Orden de conexión
+## Publicación en Supabase
 
-1. Ejecutar `supabase/migrations/0001_initial_schema.sql`.
-2. Ejecutar `supabase/migrations/0002_security_indexes.sql`.
-3. Ejecutar `supabase/migrations/0003_storage.sql`.
-4. Crear el usuario en Authentication → Users.
-5. Insertar su UUID en `admin_profiles` con rol `administrator`.
-6. Configurar Auth y RLS; comprobar que un visitante no puede leer borradores.
-7. Migrar el contenido de `seedData` y revisar slugs.
-6. Configurar Storage y reemplazar URLs base64 por URLs versionadas.
-7. Configurar la función segura de consultas y correo.
-8. Añadir las variables en Vercel y desplegar.
+Las migraciones de `supabase/migrations` son la fuente oficial. Incluyen tablas, RLS, consultas públicas seguras, Storage, contenido inicial y la ayuda para asignar administradores.
+
+```text
+npx supabase login
+npx supabase link --project-ref obqwguhxchtpyqmnxiaz
+npx supabase db push
+```
+
+Después:
+
+1. Crear el usuario en Supabase → Authentication → Users.
+2. En SQL Editor ejecutar `select public.promote_admin('correo-del-admin');`.
+3. Probar `/admin/acceso` con ese correo y contraseña.
+4. Confirmar que un visitante solo ve contenido publicado y no puede leer consultas ni adjuntos.
+
+Si cambia `src/data/seed.js`, regenerar la migración inicial con `npm run db:seed-migration`. No se debe ejecutar una migración de seed nueva sobre contenido editorial ya administrado sin revisar primero los cambios.
+
+## Publicación en GitHub Pages
+
+En Settings → Secrets and variables → Actions configurar:
+
+- Variable `VITE_SUPABASE_URL`.
+- Secret `VITE_SUPABASE_ANON_KEY`.
+
+En Settings → Pages seleccionar **GitHub Actions** como origen. Cada push a `main` compilará la web, conservará las rutas internas —incluido `/admin`— y publicará el resultado.
 
 ## Acceso de desarrollo
 
-En `import.meta.env.DEV`, el panel usa temporalmente `VITE_DEV_ADMIN_CODE` o `demo2026`. Este mecanismo existe solo para pruebas locales. Antes del lanzamiento debe quedar deshabilitado y reemplazarse por Supabase Auth.
+En `import.meta.env.DEV`, el panel usa temporalmente `VITE_DEV_ADMIN_CODE` o `demo2026`. En producción siempre usa Supabase Auth y el perfil de `admin_profiles`; el flujo demo queda deshabilitado.
 
 ## Regla de seguridad
 

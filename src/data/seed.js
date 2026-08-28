@@ -1,4 +1,4 @@
-const A = '/assets/';
+const A = `${import.meta.env?.BASE_URL || '/'}assets/`;
 
 const q = (id,label,type='text',required=false,extra={}) => ({id,label,type,required,...extra});
 const budgets = ['Menos de $100','$100–$300','$300–$700','$700–$1.500','Más de $1.500','Necesito orientación'];
@@ -35,7 +35,7 @@ const serviceBlueprints = [
 
 export const seedData = {
   schemaVersion:8,
-  settings:{siteName:'JEP Designer',owner:'Jonathan Peña',tagline:'De la imaginación a la creatividad',email:'jepdesigner.ec@gmail.com',whatsapp:'+593 96 797 1841',whatsappRaw:'593967971841',instagram:'https://www.instagram.com/jepdesigner.ec',theme:'dark',domain:'',defaultOgImage:'/assets/portada.jpg'},
+  settings:{siteName:'JEP Designer',owner:'Jonathan Peña',tagline:'De la imaginación a la creatividad',email:'jepdesigner.ec@gmail.com',whatsapp:'+593 96 797 1841',whatsappRaw:'593967971841',instagram:'https://www.instagram.com/jepdesigner.ec',theme:'dark',domain:'',defaultOgImage:A+'portada.jpg'},
   pages:[
     {id:'home',slug:'/',title:'Jonathan',eyebrow:'Diseñador gráfico & publicista',headline:'Diseño estratégico para marcas que quieren destacar.',intro:'Transformo ideas en marcas sólidas, memorables y listas para competir. Branding, comunicación visual y experiencias digitales con intención.',published:true,blocks:homeBlocks,order:1},
     {id:'contact',slug:'/contacto',title:'Contacto',eyebrow:'Empecemos una conversación',headline:'Tu próxima gran idea puede empezar aquí.',intro:'Cuéntame qué estás imaginando. Te responderé con preguntas claras, próximos pasos y una propuesta a tu medida.',published:true,blocks:[],order:2},

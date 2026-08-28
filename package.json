@@ -11,9 +11,11 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
+    "db:seed-migration": "node scripts/generate-supabase-seed.mjs",
     "audit": "npm run test && npm run build"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.112.4",
     "@vitejs/plugin-react": "latest",
     "lucide-react": "latest",
     "react": "latest",

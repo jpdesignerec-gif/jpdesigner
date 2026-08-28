@@ -54,7 +54,7 @@ using (exists (
 
 create policy "public site settings" on public.site_settings
 for select to anon, authenticated
-using (key in ('site_name', 'tagline', 'public_contact', 'social_links', 'default_og_image'));
+using (key = 'site');
 
 create policy "admins manage pages" on public.pages for all to authenticated using (public.is_site_admin()) with check (public.is_site_admin());
 create policy "admins manage categories" on public.portfolio_categories for all to authenticated using (public.is_site_admin()) with check (public.is_site_admin());

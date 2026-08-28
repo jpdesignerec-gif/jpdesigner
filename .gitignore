@@ -2,6 +2,7 @@ node_modules/
 dist/
 test-results/
 playwright-report/
+supabase/.temp/
 .env
 .env.local
 .env.*.local
@@ -11,4 +12,3 @@ playwright-report/
 # Exportaciones y datos locales que pueden contener información de clientes
 jep-designer-backup.json
 *.local.json
-

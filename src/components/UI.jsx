@@ -26,6 +26,7 @@ import { ColorStudio } from "./ColorStudio";
 import { ModernCalendar, SelectMenu } from "./FormControls";
 import { buildInquirySummary, validateContact } from "../utils/quote";
 import { visibleContent } from "../utils/editorial";
+import { assetUrl } from "../utils/assets";
 
 export function Logo({ compact = false }) {
   return (
@@ -179,7 +180,7 @@ export function ProjectCard({ project, category }) {
     <Link className="project-card" to={path}>
       <div className="project-image">
         <img
-          src={project.cover}
+          src={assetUrl(project.cover)}
           alt={project.title}
           loading="lazy"
           decoding="async"
@@ -257,7 +258,7 @@ export function Gallery({ images, title = "Galería" }) {
         <>
           <div className="gallery-main">
             <img
-              src={images[current]}
+              src={assetUrl(images[current])}
               alt={`${title} ${current + 1}`}
               loading={current === 0 ? "eager" : "lazy"}
               decoding="async"
@@ -292,7 +293,7 @@ export function Gallery({ images, title = "Galería" }) {
                 key={`${src}-${i}`}
                 onClick={() => setCurrent(i)}
               >
-                <img src={src} alt="" loading="lazy" decoding="async" />
+                <img src={assetUrl(src)} alt="" loading="lazy" decoding="async" />
               </button>
             ))}
           </div>
@@ -302,7 +303,7 @@ export function Gallery({ images, title = "Galería" }) {
           {images.map((src, i) => (
             <button key={`${src}-${i}`} onClick={() => open(i)}>
               <img
-                src={src}
+                src={assetUrl(src)}
                 alt={`${title} ${i + 1}`}
                 loading="lazy"
                 decoding="async"
@@ -330,7 +331,7 @@ export function Gallery({ images, title = "Galería" }) {
             <ChevronLeft />
           </button>
           <img
-            src={images[current]}
+            src={assetUrl(images[current])}
             alt={`${title} ampliada ${current + 1}`}
             decoding="async"
           />
@@ -459,7 +460,7 @@ function QuestionField({ question, value, onChange }) {
 }
 
 export function QuoteWizard({ service, plan, onClose }) {
-  const { data, setData, notify } = useSite();
+  const { data, submitInquiry, notify } = useSite();
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
   const dialogRef = useRef(null);
@@ -515,7 +516,7 @@ export function QuoteWizard({ service, plan, onClose }) {
       previousFocus.current?.focus?.();
     };
   }, [onClose]);
-  const submit = () => {
+  const submit = async () => {
     const validation = validateContact(answers);
     setErrors(validation);
     if (Object.keys(validation).length) {
@@ -532,13 +533,22 @@ export function QuoteWizard({ service, plan, onClose }) {
         email: answers.email,
         phone: answers.phone,
       },
-      answers,
-      files: [],
+      answers: Object.fromEntries(
+        Object.entries(answers).map(([key, value]) => [
+          key,
+          Array.isArray(value) && value.some((entry) => typeof File !== "undefined" && entry instanceof File)
+            ? value.map((file) => file.name)
+            : value,
+        ]),
+      ),
+      files: questions
+        .filter((question) => question.type === "file")
+        .flatMap((question) => answers[question.id] || []),
       status: "new",
       internalNotes: "",
       createdAt: new Date().toISOString(),
     };
-    setData((prev) => ({ ...prev, inquiries: [inquiry, ...prev.inquiries] }));
+    await submitInquiry(inquiry);
     const summary = buildInquirySummary({
       service: chosen,
       plan,

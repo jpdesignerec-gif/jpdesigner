@@ -16,6 +16,7 @@ import {
   Zap,
 } from "lucide-react";
 import { useSite } from "../store/SiteStore";
+import { assetUrl } from "../utils/assets";
 import {
   Gallery,
   PriceCalculator,
@@ -81,7 +82,7 @@ export function HomePage() {
               </Link>
             </div>
             <div className="hero-person">
-              <img src="/assets/personaje-04.jpg" alt="Jonathan Peña" />
+              <img src={assetUrl("/assets/personaje-04.jpg")} alt="Jonathan Peña" />
               <span>
                 <b>Jonathan Peña</b>
                 <small>Diseñador gráfico & publicista</small>
@@ -107,7 +108,7 @@ export function HomePage() {
             <img
               fetchPriority="high"
               decoding="async"
-              src="/assets/portada.jpg"
+              src={assetUrl("/assets/portada.jpg")}
               alt="Universo visual de JEP Designer"
             />
             <div className="floating-card top">
@@ -345,7 +346,7 @@ export function ProjectDetailPage() {
           </Link>
         </div>
         <div className="project-cover">
-          <img src={project.cover} alt={project.title} />
+          <img src={assetUrl(project.cover)} alt={project.title} />
         </div>
       </section>
       <section className="section case-intro">
@@ -771,7 +772,7 @@ export function AboutPage() {
       />
       <section className="section about-intro">
         <div className="about-portrait">
-          <img src="/assets/personaje-04.jpg" alt="Jonathan Peña, diseñador gráfico y publicista" />
+          <img src={assetUrl("/assets/personaje-04.jpg")} alt="Jonathan Peña, diseñador gráfico y publicista" />
           <span>JEP / 2026</span>
         </div>
         <div className="about-copy">
@@ -810,26 +811,21 @@ export function AboutPage() {
 }
 
 export function ContactPage() {
-  const { data, setData, notify } = useSite();
+  const { data, submitInquiry, notify } = useSite();
   const page = data.pages.find((p) => p.id === "contact");
   const [form, setForm] = useState({ name: "", email: "", message: "" });
-  const submit = (e) => {
+  const submit = async (e) => {
     e.preventDefault();
-    setData((prev) => ({
-      ...prev,
-      inquiries: [
-        {
-          id: crypto.randomUUID(),
-          serviceId: null,
-          serviceName: "Contacto general",
-          contact: { name: form.name, email: form.email },
-          answers: { message: form.message },
-          status: "new",
-          createdAt: new Date().toISOString(),
-        },
-        ...prev.inquiries,
-      ],
-    }));
+    await submitInquiry({
+      id: crypto.randomUUID(),
+      serviceId: null,
+      serviceName: "Contacto general",
+      contact: { name: form.name, email: form.email },
+      answers: { message: form.message },
+      files: [],
+      status: "new",
+      createdAt: new Date().toISOString(),
+    });
     notify("Mensaje guardado. Te responderé pronto.");
     setForm({ name: "", email: "", message: "" });
   };
