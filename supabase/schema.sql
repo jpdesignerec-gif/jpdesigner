@@ -1,3 +1,9 @@
+-- DEPRECATED: el esquema canónico está versionado en supabase/migrations/.
+-- No ejecutar este archivo en un proyecto nuevo: conserva el diseño UUID
+-- original y no es compatible con los IDs estables del frontend.
+-- Usa las migraciones 0001_initial_schema.sql, 0002_security_indexes.sql
+-- y 0003_storage.sql mediante Supabase CLI.
+
 create extension if not exists "pgcrypto";
 
 create table if not exists pages (id uuid primary key default gen_random_uuid(), slug text unique not null, title text not null, eyebrow text, headline text, intro text, body jsonb default '[]', blocks jsonb default '[]', status text default 'draft' check(status in ('draft','published','scheduled')), published boolean default false, publish_at timestamptz, seo jsonb default '{}', content_verified boolean default false, sort_order int default 0, updated_at timestamptz default now());

@@ -28,11 +28,13 @@ La `anon key` de Supabase puede ser pública si RLS está correctamente configur
 
 ## Orden de conexión
 
-1. Ejecutar `supabase/schema.sql` en el SQL Editor.
-2. Crear el usuario en Authentication → Users.
-3. Insertar su UUID en `admin_profiles` con rol `administrator`.
-4. Configurar Auth y RLS; comprobar que un visitante no puede leer borradores.
-5. Migrar el contenido de `seedData` y revisar slugs.
+1. Ejecutar `supabase/migrations/0001_initial_schema.sql`.
+2. Ejecutar `supabase/migrations/0002_security_indexes.sql`.
+3. Ejecutar `supabase/migrations/0003_storage.sql`.
+4. Crear el usuario en Authentication → Users.
+5. Insertar su UUID en `admin_profiles` con rol `administrator`.
+6. Configurar Auth y RLS; comprobar que un visitante no puede leer borradores.
+7. Migrar el contenido de `seedData` y revisar slugs.
 6. Configurar Storage y reemplazar URLs base64 por URLs versionadas.
 7. Configurar la función segura de consultas y correo.
 8. Añadir las variables en Vercel y desplegar.
@@ -44,4 +46,3 @@ En `import.meta.env.DEV`, el panel usa temporalmente `VITE_DEV_ADMIN_CODE` o `de
 ## Regla de seguridad
 
 Si una credencial se comparte accidentalmente en chat, archivo o commit, revocarla y regenerarla inmediatamente. Los agentes deben documentar el nombre de la variable necesaria, nunca su valor.
-
