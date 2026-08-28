@@ -22,19 +22,18 @@
 
 La aplicación usa Supabase cuando las variables públicas están configuradas. `localStorage` bajo `jep-site-data-v2` se mantiene como respaldo de experiencia y para desarrollo sin credenciales.
 
-Las migraciones `0001`–`0005` contienen esquema, políticas RLS, Storage público/privado, contenido inicial y la ayuda de alta administrativa. El código está listo; su ejecución remota requiere autenticar la CLI o usar SQL Editor con la cuenta propietaria.
+Las migraciones `0001`–`0005` están aplicadas en el proyecto Supabase `obqwguhxchtpyqmnxiaz`: esquema, políticas RLS, Storage público/privado, contenido inicial y alta administrativa. La validación remota confirma 1 usuario Auth, 1 administrador activo y los buckets `jep-media` y `jep-inquiry-files` configurados con la visibilidad esperada.
+
+La rama `main` está publicada mediante GitHub Actions en `https://jpdesignerec-gif.github.io/jpdesigner/`. El panel de producción está disponible en `https://jpdesignerec-gif.github.io/jpdesigner/admin/acceso` y usa Supabase Auth; las variables publicables están configuradas en GitHub sin incluir credenciales privilegiadas en el repositorio.
 
 ## Pendiente antes de producción
 
-1. Autenticar Supabase, vincular el proyecto y ejecutar `npx supabase db push`.
-2. Crear el usuario Auth y promoverlo con `public.promote_admin`.
-3. Configurar las dos variables Supabase en GitHub Actions y activar Pages con origen GitHub Actions.
-4. Autenticar GitHub y subir `main`; la publicación se ejecuta automáticamente.
-5. Configurar correo transaccional y protección antispam/rate limiting antes de una campaña de alto tráfico.
-6. Sustituir o verificar testimonios, proyectos, precios, derechos y contenido demo antes de presentarlos como reales.
-7. Definir dominio final y actualizar `SITE_URL` cuando deje de usarse el dominio de GitHub Pages.
-8. Ejecutar Lighthouse, WCAG 2.2, teclado/lector de pantalla y pruebas en dispositivos físicos.
-9. Configurar backups periódicos de Supabase.
+1. Confirmar el correo del primer usuario Auth si Supabase envió el mensaje y comprobar el inicio de sesión real del administrador.
+2. Configurar correo transaccional y protección antispam/rate limiting antes de una campaña de alto tráfico.
+3. Sustituir o verificar testimonios, proyectos, precios, derechos y contenido demo antes de presentarlos como reales.
+4. Definir dominio final y actualizar `SITE_URL` cuando deje de usarse el dominio de GitHub Pages.
+5. Ejecutar Lighthouse, WCAG 2.2, teclado/lector de pantalla y pruebas en dispositivos físicos.
+6. Configurar backups periódicos de Supabase.
 
 ## Riesgos conocidos
 
