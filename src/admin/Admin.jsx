@@ -36,7 +36,7 @@ import { BlockBuilder } from "../components/BlockBuilder";
 import { useSite } from "../store/SiteStore";
 import { ConfirmDialog } from "../components/Feedback";
 import { getAdminSession, isSupabaseConfigured, supabase } from "../lib/supabase";
-import { assetUrl } from "../utils/assets";
+import { appUrl, assetUrl } from "../utils/assets";
 import {
   AdminListToolbar,
   AdminSearch,
@@ -542,7 +542,7 @@ function PageEditor({ item, onClose, onSave, onAutosave }) {
       <nav className="editor-section-nav">
         <a href="#page-basics">Información principal</a>
         <a href="#page-blocks">Bloques visuales</a>
-        <a href={`${form.slug}?preview=1`} target="_blank" rel="noreferrer">
+        <a href={appUrl(`${form.slug}?preview=1`)} target="_blank" rel="noreferrer">
           <Eye /> Vista previa privada
         </a>
       </nav>
@@ -777,7 +777,7 @@ function ProjectEditor({ item, categories, onClose, onSave, onAutosave }) {
         <a href="#project-basics">Ficha del proyecto</a>
         <a href="#project-blocks">Caso por bloques</a>
         <a
-          href={`/portfolio/${form.slug}?preview=1`}
+          href={appUrl(`/portfolio/${form.slug}?preview=1`)}
           target="_blank"
           rel="noreferrer"
         >
@@ -1423,7 +1423,7 @@ function ServiceEditor({ item, onClose, onSave, onAutosave }) {
         <a href="#service-basics">Ficha comercial</a>
         <a href="#service-form">Formulario</a>
         <a
-          href={`/servicios/${form.slug}?preview=1`}
+          href={appUrl(`/servicios/${form.slug}?preview=1`)}
           target="_blank"
           rel="noreferrer"
         >

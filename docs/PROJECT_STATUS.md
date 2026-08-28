@@ -15,7 +15,7 @@
 - SEO editable por contenido, canonical configurable, Open Graph, robots, sitemap generado en build, favicon y rutas de categorías.
 - Medios con optimización WebP local, almacenamiento público administrado en Supabase, texto alternativo y verificación de derechos.
 - Supabase Auth en producción, perfiles administrativos, persistencia editorial, RLS, Storage, consultas por RPC, versiones, papelera y ajustes compartidos.
-- GitHub Pages preparado para publicar la web pública y el panel admin bajo el subdirectorio del repositorio, incluyendo rutas directas mediante `404.html`.
+- GitHub Pages preparado para publicar la web pública y el panel admin bajo el subdirectorio del repositorio; usa navegación hash en Pages para evitar errores 404 en rutas directas del hosting estático.
 - Pruebas: 8 unitarias y 11 E2E aprobadas en Chrome escritorio y emulación móvil; una prueba de overflow se omite intencionalmente en el proyecto de escritorio.
 
 ## Estado de persistencia y despliegue
@@ -24,7 +24,7 @@ La aplicación usa Supabase cuando las variables públicas están configuradas. 
 
 Las migraciones `0001`–`0005` están aplicadas en el proyecto Supabase `obqwguhxchtpyqmnxiaz`: esquema, políticas RLS, Storage público/privado, contenido inicial y alta administrativa. La validación remota confirma 1 usuario Auth, 1 administrador activo y los buckets `jep-media` y `jep-inquiry-files` configurados con la visibilidad esperada.
 
-La rama `main` está publicada mediante GitHub Actions en `https://jpdesignerec-gif.github.io/jpdesigner/`. El panel de producción está disponible en `https://jpdesignerec-gif.github.io/jpdesigner/admin/acceso` y usa Supabase Auth; las variables publicables están configuradas en GitHub sin incluir credenciales privilegiadas en el repositorio.
+La rama `main` está publicada mediante GitHub Actions en `https://jpdesignerec-gif.github.io/jpdesigner/`. El panel de producción está disponible en `https://jpdesignerec-gif.github.io/jpdesigner/#/admin/acceso` y usa Supabase Auth; las variables publicables están configuradas en GitHub sin incluir credenciales privilegiadas en el repositorio.
 
 ## Pendiente antes de producción
 
