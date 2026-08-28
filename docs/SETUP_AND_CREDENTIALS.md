@@ -50,7 +50,7 @@ Si cambia `src/data/seed.js`, regenerar la migración inicial con `npm run db:se
 En Settings → Secrets and variables → Actions configurar:
 
 - Variable `VITE_SUPABASE_URL`.
-- Secret `VITE_SUPABASE_ANON_KEY`.
+- Variable `VITE_SUPABASE_ANON_KEY` (es una clave publicable; nunca usar aquí `service_role`).
 
 En Settings → Pages seleccionar **GitHub Actions** como origen. Cada push a `main` compilará la web, conservará las rutas internas —incluido `/admin`— y publicará el resultado.
 

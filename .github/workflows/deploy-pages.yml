@@ -34,7 +34,7 @@ jobs:
           BASE_PATH: /jpdesigner/
           SITE_URL: https://jpdesignerec-gif.github.io/jpdesigner
           VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
           VITE_ENABLE_ADMIN_DEMO: false
       - name: Preserve SPA routes
         run: cp dist/index.html dist/404.html
