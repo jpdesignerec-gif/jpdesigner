@@ -28,6 +28,7 @@ import { useSite } from "../store/SiteStore";
 import { ColorStudio } from "./ColorStudio";
 import { blockCatalog, createBlock } from "./BlockRenderer";
 import { ConfirmDialog, StudioDialog } from "./Feedback";
+import { optimizeImage } from "../utils/images";
 
 export function BlockBuilder({
   value = [],
@@ -992,9 +993,18 @@ function RichEditor({ label, value = "", onChange }) {
 }
 
 function AssetField({ label, value, onChange }) {
-  const { data } = useSite();
+  const { data, notify } = useSite();
   const input = useRef();
-  const upload = async (file) => onChange(await optimizeImage(file));
+  const upload = async (file) => {
+    try {
+      onChange((await optimizeImage(file)).url);
+      notify("Imagen optimizada a WebP");
+    } catch (error) {
+      notify({ message: error?.message || "No se pudo procesar la imagen", type: "error" });
+    } finally {
+      if (input.current) input.current.value = "";
+    }
+  };
   return (
     <div className="asset-field">
       <span>{label}</span>
@@ -1035,11 +1045,19 @@ function AssetField({ label, value, onChange }) {
   );
 }
 function AssetList({ label, value = [], onChange }) {
+  const { notify } = useSite();
   const input = useRef();
   const upload = async (files) => {
-    const images = [];
-    for (const file of files) images.push(await optimizeImage(file));
-    onChange([...value, ...images]);
+    try {
+      const images = [];
+      for (const file of [...(files || [])]) images.push((await optimizeImage(file)).url);
+      onChange([...value, ...images]);
+      if (images.length) notify(`${images.length} imagen${images.length === 1 ? "" : "es"} optimizada${images.length === 1 ? "" : "s"}`);
+    } catch (error) {
+      notify({ message: error?.message || "No se pudieron procesar las imágenes", type: "error" });
+    } finally {
+      if (input.current) input.current.value = "";
+    }
   };
   return (
     <div className="asset-list">
@@ -1281,13 +1299,4 @@ function ToggleField({ label, checked, onChange }) {
       <i />
     </label>
   );
-}
-async function optimizeImage(file) {
-  const bitmap = await createImageBitmap(file),
-    scale = Math.min(1, 1920 / bitmap.width),
-    canvas = document.createElement("canvas");
-  canvas.width = Math.round(bitmap.width * scale);
-  canvas.height = Math.round(bitmap.height * scale);
-  canvas.getContext("2d").drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-  return canvas.toDataURL("image/webp", 0.82);
 }

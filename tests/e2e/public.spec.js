@@ -10,11 +10,23 @@ const routes = [
   "/cookies",
 ];
 test("las rutas públicas cargan sin errores visibles", async ({ page }) => {
+  test.setTimeout(60000);
   for (const route of routes) {
     await page.goto(route);
     await expect(page.locator("main")).toBeVisible();
     await expect(page.locator(".app-error")).toHaveCount(0);
   }
+});
+test("el panel optimiza y guarda una imagen subida", async ({ page }) => {
+  await page.goto("/admin/acceso");
+  await page.getByLabel("Código de acceso").fill("demo2026");
+  await page.getByRole("button", { name: /Entrar al panel/i }).click();
+  await page.goto("/admin/medios");
+  await page.locator("input[type=file]").setInputFiles("public/assets/portada.jpg");
+  await expect(page.getByText(/optimizada.*biblioteca/i)).toBeVisible();
+  const image = page.locator(".media-grid article img").last();
+  await expect(image).toBeVisible();
+  await expect(image).toHaveAttribute("src", /^data:image\/webp/);
 });
 test("portfolio filtra con URL de categoría", async ({ page }) => {
   await page.goto("/portfolio");

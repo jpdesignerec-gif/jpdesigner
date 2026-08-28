@@ -37,6 +37,7 @@ import { useSite } from "../store/SiteStore";
 import { ConfirmDialog } from "../components/Feedback";
 import { getAdminSession, isSupabaseConfigured, supabase } from "../lib/supabase";
 import { appUrl, assetUrl } from "../utils/assets";
+import { dataUrlToFile, optimizeImage } from "../utils/images";
 import {
   AdminListToolbar,
   AdminSearch,
@@ -2007,27 +2008,40 @@ export function MediaAdmin() {
   const { data, addItem, removeItem, updateItem, uploadMedia, notify } = useSite();
   const input = useRef();
   const [deleting, setDeleting] = useState(null);
+  const [uploading, setUploading] = useState(false);
   const upload = async (files) => {
-    for (const file of files) {
-      if (!file.type.startsWith("image/")) continue;
-      if (isSupabaseConfigured) {
-        await uploadMedia(file, { name: file.name, rightsVerified: false });
-        continue;
+    const images = [...(files || [])].filter((file) => file.type.startsWith("image/"));
+    if (!images.length) return notify("Selecciona al menos una imagen válida", "warning");
+    setUploading(true);
+    let uploaded = 0;
+    try {
+      for (const file of images) {
+        const optimized = await optimizeImage(file);
+        if (isSupabaseConfigured) {
+          const optimizedFile = dataUrlToFile(optimized.url, file.name);
+          await uploadMedia(optimizedFile, { name: optimizedFile.name, rightsVerified: false, width: optimized.width, height: optimized.height });
+        } else {
+          addItem("media", {
+            id: crypto.randomUUID(),
+            name: file.name.replace(/\.[^.]+$/, ".webp"),
+            url: optimized.url,
+            variants: optimized.variants,
+            width: optimized.width,
+            height: optimized.height,
+            alt: "",
+            rightsVerified: false,
+            type: "image",
+          });
+        }
+        uploaded += 1;
       }
-      const optimized = await optimizeImage(file);
-      addItem("media", {
-        id: crypto.randomUUID(),
-        name: file.name.replace(/\.[^.]+$/, ".webp"),
-        url: optimized.url,
-        variants: optimized.variants,
-        width: optimized.width,
-        height: optimized.height,
-        alt: "",
-        rightsVerified: false,
-        type: "image",
-      });
+      notify(`${uploaded} imagen${uploaded === 1 ? "" : "es"} optimizada${uploaded === 1 ? "" : "s"} a WebP y añadida${uploaded === 1 ? "" : "s"} a la biblioteca`);
+    } catch (error) {
+      notify({ message: error?.message || "No se pudo procesar la imagen", type: "error" });
+    } finally {
+      setUploading(false);
+      if (input.current) input.current.value = "";
     }
-    notify("Imágenes optimizadas a WebP y añadidas a la biblioteca");
   };
   return (
     <AdminPage
@@ -2045,15 +2059,33 @@ export function MediaAdmin() {
           />
           <button
             className="button primary small"
+            disabled={uploading}
             onClick={() => input.current.click()}
           >
             <Upload />
-            Subir imágenes
+            {uploading ? "Procesando…" : "Subir imágenes"}
           </button>
         </>
       }
     >
-      <div className="media-drop" onClick={() => input.current.click()}>
+      <div
+        className={`media-drop ${uploading ? "is-uploading" : ""}`}
+        onClick={() => !uploading && input.current.click()}
+        onDragOver={(event) => {
+          event.preventDefault();
+          event.currentTarget.classList.add("is-dragging");
+        }}
+        onDragLeave={(event) => event.currentTarget.classList.remove("is-dragging")}
+        onDrop={(event) => {
+          event.preventDefault();
+          event.currentTarget.classList.remove("is-dragging");
+          upload(event.dataTransfer.files);
+        }}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(event) => (event.key === "Enter" || event.key === " ") && input.current.click()}
+        aria-label="Subir imágenes a la biblioteca"
+      >
         <Upload />
         <h3>Suelta imágenes aquí</h3>
         <p>
@@ -2395,29 +2427,39 @@ function TextField({ label, value, onChange, type = "text" }) {
   );
 }
 function RichTextEditor({ label, value, onChange }) {
+  const editor = useRef();
+  useEffect(() => {
+    if (editor.current && editor.current.innerHTML !== (value || "")) {
+      editor.current.innerHTML = value || "";
+    }
+  }, [value]);
   const exec = (cmd) => {
+    editor.current?.focus();
     document.execCommand(cmd, false, null);
+    onChange(editor.current?.innerHTML || "");
   };
   return (
     <div className="field rich-field">
       <span>{label}</span>
       <div className="rich-toolbar">
-        <button onClick={() => exec("bold")}>
+        <button type="button" title="Negrita" onMouseDown={(event) => event.preventDefault()} onClick={() => exec("bold")}>
           <b>B</b>
         </button>
-        <button onClick={() => exec("italic")}>
+        <button type="button" title="Cursiva" onMouseDown={(event) => event.preventDefault()} onClick={() => exec("italic")}>
           <i>I</i>
         </button>
-        <button onClick={() => exec("insertUnorderedList")}>• Lista</button>
+        <button type="button" title="Lista" onMouseDown={(event) => event.preventDefault()} onClick={() => exec("insertUnorderedList")}>• Lista</button>
       </div>
       <div
+        ref={editor}
         className="rich-editor"
         contentEditable
         suppressContentEditableWarning
-        onInput={(e) => onChange(e.currentTarget.innerText)}
-      >
-        {value}
-      </div>
+        role="textbox"
+        aria-label={label}
+        aria-multiline="true"
+        onInput={(e) => onChange(e.currentTarget.innerHTML)}
+      />
     </div>
   );
 }
@@ -2435,11 +2477,30 @@ function Toggle({ label, checked, onChange }) {
   );
 }
 function ImageField({ label, value, onChange }) {
+  const { notify } = useSite();
+  const input = useRef();
+  const [busy, setBusy] = useState(false);
+  const upload = async (file) => {
+    setBusy(true);
+    try {
+      onChange((await optimizeImage(file)).url);
+      notify("Imagen optimizada a WebP");
+    } catch (error) {
+      notify({ message: error?.message || "No se pudo procesar la imagen", type: "error" });
+    } finally {
+      setBusy(false);
+      if (input.current) input.current.value = "";
+    }
+  };
   return (
     <div className="field image-field">
       <span>{label}</span>
-      <img src={value} />
+      {value ? <img src={value} alt={`Vista previa de ${label}`} /> : <div className="image-placeholder">Sin imagen seleccionada</div>}
       <input value={value} onChange={(e) => onChange(e.target.value)} />
+      <input ref={input} hidden type="file" accept="image/*" onChange={(e) => e.target.files[0] && upload(e.target.files[0])} />
+      <button type="button" className="button ghost small" disabled={busy} onClick={() => input.current?.click()}>
+        <Upload /> {busy ? "Optimizando…" : "Subir y optimizar"}
+      </button>
     </div>
   );
 }
@@ -2450,32 +2511,3 @@ const slugify = (value) =>
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
-async function optimizeImage(file) {
-  const bitmap = await createImageBitmap(file);
-  const makeVariant = (maximum) => {
-    const scale = Math.min(1, maximum / bitmap.width);
-    const canvas = document.createElement("canvas");
-    canvas.width = Math.round(bitmap.width * scale);
-    canvas.height = Math.round(bitmap.height * scale);
-    canvas
-      .getContext("2d")
-      .drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-    return {
-      url: canvas.toDataURL("image/webp", maximum <= 480 ? 0.76 : 0.82),
-      width: canvas.width,
-      height: canvas.height,
-    };
-  };
-  const variants = [
-    ...new Set(
-      [480, 960, 1920]
-        .filter((size) => size < bitmap.width)
-        .concat(Math.min(bitmap.width, 1920)),
-    ),
-  ]
-    .sort((a, b) => a - b)
-    .map(makeVariant);
-  bitmap.close?.();
-  const largest = variants.at(-1);
-  return { ...largest, variants };
-}
