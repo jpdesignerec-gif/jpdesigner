@@ -107,6 +107,9 @@ export function AdminLogin() {
   const [credentials, setCredentials] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [needsConfirmation, setNeedsConfirmation] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendSent, setResendSent] = useState(false);
   useEffect(() => {
     let robots = document.querySelector('meta[name="robots"]');
     if (!robots) {
@@ -119,6 +122,8 @@ export function AdminLogin() {
   const submit = async (e) => {
     e.preventDefault();
     setError("");
+    setNeedsConfirmation(false);
+    setResendSent(false);
     if (adminPreviewEnabled) {
       if (code === adminPreviewCode) {
         sessionStorage.setItem(
@@ -139,7 +144,9 @@ export function AdminLogin() {
     const { error: authError } = await supabase.auth.signInWithPassword(credentials);
     if (authError) {
       setLoading(false);
-      setError("Correo o contraseña incorrectos.");
+      const unconfirmed = authError.code === "email_not_confirmed" || /confirm/i.test(authError.message || "");
+      setNeedsConfirmation(unconfirmed);
+      setError(unconfirmed ? "Confirma tu correo antes de entrar al panel." : "Correo o contraseña incorrectos.");
       return;
     }
     const { isAdmin } = await getAdminSession();
@@ -150,6 +157,19 @@ export function AdminLogin() {
       return;
     }
     nav("/admin");
+  };
+  const resendConfirmation = async () => {
+    const email = credentials.email.trim();
+    if (!email || resendLoading) return;
+    setResendLoading(true);
+    setError("");
+    const { error: resendError } = await supabase.auth.resend({ type: "signup", email });
+    setResendLoading(false);
+    if (resendError) {
+      setError("No se pudo reenviar el correo. Intenta de nuevo en unos minutos.");
+      return;
+    }
+    setResendSent(true);
   };
   return (
     <main className="admin-login">
@@ -204,6 +224,15 @@ export function AdminLogin() {
               />
             </label>
             {error && <p className="form-error" role="alert">{error}</p>}
+            {needsConfirmation && (
+              <div className="admin-confirmation-help">
+                <p>Revisa la bandeja de entrada y spam. Si no llegó, puedes solicitar otro correo.</p>
+                <button type="button" className="text-link" onClick={resendConfirmation} disabled={resendLoading}>
+                  {resendLoading ? "Reenviando…" : "Reenviar confirmación"}
+                </button>
+                {resendSent && <small>Correo de confirmación solicitado.</small>}
+              </div>
+            )}
             <button className="button primary wide" disabled={loading}>
               {loading ? "Verificando…" : "Entrar al panel"} <ChevronRight />
             </button>
