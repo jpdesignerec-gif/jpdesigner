@@ -2,7 +2,7 @@ import { writeFile } from "node:fs/promises";
 import { seedData } from "../src/data/seed.js";
 
 const base = (process.env.SITE_URL || seedData.settings.domain || "https://jepdesigner.ec").replace(/\/$/, "");
-const staticRoutes = ["/", "/portfolio", "/servicios", "/planes", "/contacto", "/privacidad", "/terminos", "/cookies"];
+const staticRoutes = ["/", "/portfolio", "/servicios", "/planes", "/sobre-mi", "/contacto", "/privacidad", "/terminos", "/cookies"];
 const dynamicRoutes = [
   ...seedData.categories.map(item => `/portfolio/categoria/${item.slug}`),
   ...seedData.projects.filter(item => item.published !== false).map(item => `/portfolio/${item.slug}`),

@@ -11,6 +11,8 @@ import { initMonitoring } from './utils/monitoring';
 
 initMonitoring();
 
+const basename = import.meta.env.BASE_URL === '/' ? undefined : import.meta.env.BASE_URL.replace(/\/$/, '');
+
 ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode><AppErrorBoundary><BrowserRouter><SiteProvider><App /></SiteProvider></BrowserRouter></AppErrorBoundary></React.StrictMode>
+  <React.StrictMode><AppErrorBoundary><BrowserRouter basename={basename}><SiteProvider><App /></SiteProvider></BrowserRouter></AppErrorBoundary></React.StrictMode>
 );
