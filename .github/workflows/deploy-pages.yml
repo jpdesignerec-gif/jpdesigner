@@ -38,6 +38,8 @@ jobs:
           VITE_ENABLE_ADMIN_DEMO: false
       - name: Preserve SPA routes
         run: node scripts/generate-pages-fallback.mjs
+        env:
+          BASE_PATH: /jpdesigner/
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
