@@ -22,7 +22,7 @@
 
 La aplicación usa Supabase cuando las variables públicas están configuradas. `localStorage` bajo `jep-site-data-v2` se mantiene como respaldo de experiencia y para desarrollo sin credenciales.
 
-Las migraciones `0001`–`0005` están aplicadas en el proyecto Supabase `obqwguhxchtpyqmnxiaz`: esquema, políticas RLS, Storage público/privado, contenido inicial y alta administrativa. La validación remota confirma 1 usuario Auth, 1 administrador activo y los buckets `jep-media` y `jep-inquiry-files` configurados con la visibilidad esperada.
+Las migraciones `0001`–`0006` están aplicadas en el proyecto Supabase `obqwguhxchtpyqmnxiaz`: esquema, políticas RLS, Storage público/privado, contenido inicial, alta administrativa y corrección del correo público. La validación remota confirma el usuario Auth `jpdesignerec@gmail.com`, 1 administrador activo y los buckets `jep-media` y `jep-inquiry-files` configurados con la visibilidad esperada.
 
 La rama `main` está publicada mediante GitHub Actions en `https://jpdesignerec-gif.github.io/jpdesigner/`. El panel de producción está disponible en `https://jpdesignerec-gif.github.io/jpdesigner/#/admin/acceso` y usa Supabase Auth; las variables publicables están configuradas en GitHub sin incluir credenciales privilegiadas en el repositorio.
 
