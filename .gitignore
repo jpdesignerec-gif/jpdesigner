@@ -1,0 +1,14 @@
+node_modules/
+dist/
+test-results/
+playwright-report/
+.env
+.env.local
+.env.*.local
+!.env.example
+*.log
+
+# Exportaciones y datos locales que pueden contener información de clientes
+jep-designer-backup.json
+*.local.json
+

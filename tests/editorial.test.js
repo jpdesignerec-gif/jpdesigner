@@ -1,0 +1,3 @@
+import { describe,expect,it } from 'vitest';
+import { isContentVisible } from '../src/utils/editorial';
+describe('flujo editorial',()=>{it('oculta borradores al público y permite vista previa privada',()=>{const item={status:'draft',published:false};expect(isContentVisible(item,false)).toBe(false);expect(isContentVisible(item,true)).toBe(true)});it('publica contenido programado únicamente al llegar la fecha',()=>{expect(isContentVisible({status:'scheduled',publishAt:'2999-01-01'},false)).toBe(false);expect(isContentVisible({status:'scheduled',publishAt:'2020-01-01'},false)).toBe(true)});it('mantiene compatibilidad con published',()=>{expect(isContentVisible({published:true},false)).toBe(true);expect(isContentVisible({published:false},false)).toBe(false)})});

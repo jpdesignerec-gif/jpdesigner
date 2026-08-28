@@ -1,0 +1,5 @@
+const LOG_KEY='jep-client-errors-v1';
+function record(type,error,context={}){try{const current=JSON.parse(localStorage.getItem(LOG_KEY)||'[]');const entry={id:crypto.randomUUID(),type,message:error?.message||String(error),stack:error?.stack||'',context,url:location.href,userAgent:navigator.userAgent,createdAt:new Date().toISOString()};localStorage.setItem(LOG_KEY,JSON.stringify([entry,...current].slice(0,50)));window.dispatchEvent(new CustomEvent('jep:client-error',{detail:entry}))}catch{}}
+export function initMonitoring(){const error=e=>record('error',e.error||e.message,{line:e.lineno,column:e.colno});const rejection=e=>record('unhandledrejection',e.reason);window.addEventListener('error',error);window.addEventListener('unhandledrejection',rejection);return()=>{window.removeEventListener('error',error);window.removeEventListener('unhandledrejection',rejection)}}
+export function reportError(error,context){record('caught',error,context)}
+export function getClientErrors(){try{return JSON.parse(localStorage.getItem(LOG_KEY)||'[]')}catch{return[]}}

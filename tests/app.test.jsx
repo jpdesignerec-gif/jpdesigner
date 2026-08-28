@@ -1,0 +1,10 @@
+import { fireEvent,render,screen } from '@testing-library/react';
+import { describe,expect,it } from 'vitest';
+import userEvent from '@testing-library/user-event';
+import { BrowserRouter } from 'react-router-dom';
+import App from '../src/App';
+import { SiteProvider } from '../src/store/SiteStore';
+const renderApp=()=>render(<BrowserRouter><SiteProvider><App/></SiteProvider></BrowserRouter>);
+describe('experiencia pública',()=>{it('renderiza inicio y cambia de tema',async()=>{history.pushState({},'','/');renderApp();expect(screen.getByText(/Diseño estratégico/i)).toBeTruthy();await userEvent.click(screen.getByRole('button',{name:/Cambiar tema/i}));expect(document.documentElement.dataset.theme).toBe('light')});it('abre el menú contextual personalizado',()=>{history.pushState({},'','/');renderApp();fireEvent.contextMenu(document.body,{clientX:120,clientY:120});expect(screen.getByRole('menu',{name:/Acciones rápidas/i})).toBeTruthy()});it('muestra una ruta 404 comercial',()=>{history.pushState({},'','/ruta-inexistente');renderApp();expect(screen.getByText(/próxima marca puede empezar/i)).toBeTruthy()})});
+it('renderiza el detalle de un proyecto sin romper la página',()=>{history.pushState({},'','/portfolio/jep-identidad');renderApp();expect(screen.getByRole('heading',{name:/JEP Designer — Identidad en movimiento/i})).toBeTruthy();expect(screen.getByText(/Sobre el proyecto/i)).toBeTruthy()});
+it('muestra la nueva página sobre Jonathan',()=>{history.pushState({},'','/sobre-mi');renderApp();expect(screen.getByRole('heading',{name:/Diseño con intención y personalidad/i})).toBeTruthy();expect(screen.getByText(/Una forma de trabajar/i)).toBeTruthy()});
